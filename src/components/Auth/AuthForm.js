@@ -1,13 +1,16 @@
 import { useState, useRef, useContext } from "react";
+import { useHistory } from "react-router-dom";
 
-import classes from "./AuthForm.module.css";
 import AuthContext from "../../store/auth-context";
+import classes from "./AuthForm.module.css";
 
 const AuthForm = () => {
+  const history = useHistory();
   const emailInputRef = useRef();
   const passwordInputRef = useRef();
 
   const authCtx = useContext(AuthContext);
+
   const [isLogin, setIsLogin] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -17,8 +20,11 @@ const AuthForm = () => {
 
   const submitHandler = (event) => {
     event.preventDefault();
+
     const enteredEmail = emailInputRef.current.value;
     const enteredPassword = passwordInputRef.current.value;
+
+    // optional: Add validation
 
     setIsLoading(true);
     let url;
@@ -37,7 +43,7 @@ const AuthForm = () => {
         returnSecureToken: true,
       }),
       headers: {
-        "content-Type": "application/json",
+        "Content-Type": "application/json",
       },
     })
       .then((res) => {
@@ -45,22 +51,25 @@ const AuthForm = () => {
         if (res.ok) {
           return res.json();
         } else {
-          res.json().then((data) => {
-            let errMessage = "Authentication failed!";
-            if (data && data.error && data.error.message) {
-              errMessage = data.error.message;
-            }
-            throw new Error(errMessage);
+          return res.json().then((data) => {
+            let errorMessage = "Authentication failed!";
+            // if (data && data.error && data.error.message) {
+            //   errorMessage = data.error.message;
+            // }
+
+            throw new Error(errorMessage);
           });
         }
       })
       .then((data) => {
         authCtx.login(data.idToken);
+        history.replace("/");
       })
       .catch((err) => {
         alert(err.message);
       });
   };
+
   return (
     <section className={classes.auth}>
       <h1>{isLogin ? "Login" : "Sign Up"}</h1>
@@ -82,7 +91,7 @@ const AuthForm = () => {
           {!isLoading && (
             <button>{isLogin ? "Login" : "Create Account"}</button>
           )}
-          {isLoading && <p>Sending Request...</p>}{" "}
+          {isLoading && <p>Sending request...</p>}
           <button
             type='button'
             className={classes.toggle}
